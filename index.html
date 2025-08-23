@@ -4,7 +4,201 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + Svelte</title>
+    <title>Dashboard Runtime</title>
+    
+    <!-- Material Icons and Fonts -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Professional Theme Variables -->
+    <style>
+      :root {
+        /* Professional Blue Theme */
+        --primary: #2563eb;
+        --on-primary: #ffffff;
+        --primary-container: #dbeafe;
+        --on-primary-container: #1e40af;
+        --secondary: #64748b;
+        --on-secondary: #ffffff;
+        --secondary-container: #f1f5f9;
+        --on-secondary-container: #334155;
+        
+        /* Surface Colors */
+        --surface: #ffffff;
+        --on-surface: #0f172a;
+        --surface-variant: #f8fafc;
+        --on-surface-variant: #64748b;
+        --surface-container: #f8fafc;
+        --surface-container-high: #f1f5f9;
+        --surface-container-highest: #e2e8f0;
+        --surface-container-rgb: 248, 250, 252;
+        
+        /* Background */
+        --background: #ffffff;
+        --on-background: #0f172a;
+        
+        /* Outline */
+        --outline: #cbd5e1;
+        --outline-variant: #e2e8f0;
+        
+        /* Error */
+        --error: #dc2626;
+        --on-error: #ffffff;
+        --error-container: #fef2f2;
+        --on-error-container: #991b1b;
+        
+        /* Success */
+        --success: #059669;
+        --on-success: #ffffff;
+        --success-container: #d1fae5;
+        --on-success-container: #065f46;
+        
+        /* Warning */
+        --warning: #d97706;
+        --on-warning: #ffffff;
+        --warning-container: #fef3c7;
+        --on-warning-container: #92400e;
+      }
+      
+      [data-theme="dark"] {
+        /* Dark Theme Colors */
+        --primary: #3b82f6;
+        --on-primary: #1e293b;
+        --primary-container: #1e40af;
+        --on-primary-container: #dbeafe;
+        --secondary: #94a3b8;
+        --on-secondary: #1e293b;
+        --secondary-container: #334155;
+        --on-secondary-container: #f1f5f9;
+        
+        /* Dark Surface Colors */
+        --surface: #1e293b;
+        --on-surface: #f8fafc;
+        --surface-variant: #334155;
+        --on-surface-variant: #94a3b8;
+        --surface-container: #334155;
+        --surface-container-high: #475569;
+        --surface-container-highest: #64748b;
+        --surface-container-rgb: 51, 65, 85;
+        
+        /* Dark Background */
+        --background: #0f172a;
+        --on-background: #f8fafc;
+        
+        /* Dark Outline */
+        --outline: #475569;
+        --outline-variant: #334155;
+        
+        /* Dark Error */
+        --error: #f87171;
+        --on-error: #7f1d1d;
+        --error-container: #7f1d1d;
+        --on-error-container: #fecaca;
+        
+        /* Dark Success */
+        --success: #34d399;
+        --on-success: #064e3b;
+        --success-container: #064e3b;
+        --on-success-container: #a7f3d0;
+        
+        /* Dark Warning */
+        --warning: #fbbf24;
+        --on-warning: #78350f;
+        --warning-container: #78350f;
+        --on-warning-container: #fef3c7;
+      }
+      
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        font-weight: 400;
+        line-height: 1.6;
+        background: var(--background);
+        color: var(--on-background);
+        transition: background-color 0.3s ease, color 0.3s ease;
+        font-optical-sizing: auto;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      /* Professional scrollbar styling */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: var(--surface-container);
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: var(--outline-variant);
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--outline);
+      }
+
+      /* Professional Typography Scale */
+      h1, h2, h3, h4, h5, h6 {
+        font-family: 'Inter', system-ui, sans-serif;
+        font-weight: 600;
+        line-height: 1.2;
+        margin: 0;
+        color: var(--on-surface);
+      }
+
+      h1 { font-size: 2.5rem; font-weight: 300; }
+      h2 { font-size: 2rem; font-weight: 400; }
+      h3 { font-size: 1.5rem; font-weight: 500; }
+      h4 { font-size: 1.25rem; font-weight: 500; }
+      h5 { font-size: 1.125rem; font-weight: 500; }
+      h6 { font-size: 1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+      p {
+        margin: 0 0 1rem 0;
+        color: var(--on-surface-variant);
+        line-height: 1.6;
+      }
+
+      /* Code Typography */
+      code, pre, .mono {
+        font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace;
+        font-feature-settings: 'liga' 1, 'calt' 1;
+      }
+
+      /* Professional Button Styles */
+      .button {
+        font-family: 'Inter', system-ui, sans-serif;
+        font-weight: 500;
+        letter-spacing: 0.025em;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .button.fill {
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+      }
+
+      .button.fill:hover {
+        box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+      }
+
+      /* Professional Card Styles */
+      .card {
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+        transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .card:hover {
+        box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+      }
+    </style>
   </head>
   <body>
     <div id="app"></div>

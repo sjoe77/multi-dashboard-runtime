@@ -3,10 +3,12 @@
   import SimpleEditor from './components/SimpleEditor.svelte';
   import Monaco from './components/Monaco.svelte';
   import LivePreview from './components/LivePreview.svelte';
+  import AppHeader from './components/AppHeader.svelte';
+  import AppDrawer from './components/AppDrawer.svelte';
   import { saveDashboard, loadDashboard, listDashboards } from './lib/dashboardAPI.js';
   
   let code = '';
-  let currentDashboard = null;  // Don't hardcode - let parseURL() set it
+  let currentDashboard = null;
   let currentPage = 'Overview';
   let saveMessage = '';
   let dashboards = {};
@@ -22,27 +24,22 @@
     const parts = path.split('/').filter(p => p);
     
     if (parts.length === 0 || parts[0] !== 'dashboards') {
-      // Redirect to /dashboards
       window.history.pushState({}, '', '/dashboards');
       currentView = 'landing';
       return;
     }
     
     if (parts.length === 1) {
-      // /dashboards - landing page
       currentView = 'landing';
     } else if (parts.length === 2) {
-      // /dashboards/sales - consumer view
       currentView = 'consumer';
       currentDashboard = parts[1];
       isEditMode = false;
     } else if (parts.length === 3 && parts[2] === 'edit') {
-      // /dashboards/sales/edit - edit mode
       currentView = 'edit';
       currentDashboard = parts[1];
       isEditMode = true;
     } else {
-      // Default to landing
       currentView = 'landing';
     }
   }
@@ -56,7 +53,6 @@
   async function loadCurrentDashboard() {
     try {
       console.log(`Loading dashboard: ${currentDashboard}/${currentPage}.svelte`);
-      // Fetch directly from public/dashboards served by Vite
       const url = `/dashboards/${currentDashboard}/${currentPage}.svelte?t=${Date.now()}`;
       console.log(`Fetching from: ${url}`);
       
@@ -68,7 +64,6 @@
         console.log(`Content length: ${content.length}`);
         console.log(`Content preview: ${content.substring(0, 100)}...`);
         
-        // Check if we got HTML instead of Svelte (common dev server issue)
         if (content.includes('<!doctype') || content.includes('<html')) {
           code = '<div>Error: Got HTML instead of Svelte file. Check file path.</div>';
           console.error('Got HTML instead of Svelte content');
@@ -87,18 +82,16 @@
     }
   }
 
-  // Load on startup and whenever dashboard/page changes
+  // Load on startup
   onMount(() => {
     parseURL();
-    // Don't call loadCurrentDashboard here - let the reactive statement handle it
     
     window.addEventListener('popstate', () => {
       parseURL();
-      // Let the reactive statement handle loading - don't duplicate here
     });
   });
   
-  // Track last loaded state to prevent duplicate calls
+  // Track loading state
   let lastLoadedState = '';
   let isLoading = false;
   
@@ -117,12 +110,17 @@
   // Load available dashboards
   $: dashboards = listDashboards();
   
-  function toggleDrawer() {
-    drawerOpen = !drawerOpen;
+  // Event handlers
+  function handleOpenDrawer() {
+    drawerOpen = true;
   }
   
-  function closeDrawer() {
+  function handleCloseDrawer() {
     drawerOpen = false;
+  }
+  
+  function handleNavigate(event) {
+    navigateTo(event.detail);
   }
   
   async function handleSave() {
@@ -136,11 +134,11 @@
       saveMessage = `❌ Error: ${result.error}`;
     }
     
-    // Clear message after 3 seconds
     setTimeout(() => saveMessage = '', 3000);
   }
   
-  async function handleLoad(dashboard, page) {
+  async function handleDrawerSelect(event) {
+    const { dashboard, page } = event.detail;
     const result = await loadDashboard(dashboard, page);
     if (result.success) {
       code = result.source;
@@ -148,9 +146,7 @@
       currentPage = page;
       saveMessage = `📁 Loaded ${dashboard}/${page}`;
       setTimeout(() => saveMessage = '', 2000);
-      closeDrawer(); // Close drawer after selection
       
-      // Update URL to edit mode when loading from menu
       navigateTo(`/dashboards/${dashboard}/edit`);
     }
   }
@@ -164,487 +160,426 @@
   }
 </script>
 
-<div class="app">
+<!-- App Header -->
+<AppHeader 
+  {currentDashboard} 
+  {currentPage} 
+  {currentView}
+  on:open-drawer={handleOpenDrawer}
+  on:navigate={handleNavigate}
+/>
+
+<!-- App Drawer -->
+<AppDrawer 
+  isOpen={drawerOpen} 
+  {dashboards}
+  {currentDashboard}
+  {currentPage}
+  on:close={handleCloseDrawer}
+  on:select={handleDrawerSelect}
+  on:navigate={handleNavigate}
+/>
+
+<main class="app-main">
   <!-- Landing Page View -->
   {#if currentView === 'landing'}
-    <div class="landing">
-      <header class="landing-header">
-        <h1>📊 Dashboard Runtime</h1>
-        <p>Select a dashboard to view or edit</p>
-      </header>
-      
-      <div class="dashboard-grid">
-        {#each Object.entries(dashboards) as [dashboardName, pages]}
-          <div class="dashboard-tile">
-            <div class="tile-header">
-              <h3>{dashboardName}</h3>
-              <div class="tile-actions">
-                <button class="view-btn" on:click={() => viewDashboard(dashboardName)}>👁️ View</button>
-                <button class="edit-btn" on:click={() => editDashboard(dashboardName)}>🔧 Edit</button>
+    <div class="landing surface-container">
+      <div class="landing-content">
+        <div class="hero-section">
+          <i class="material-icons hero-icon">dashboard</i>
+          <h1 class="hero-title">Dashboard Runtime</h1>
+          <p class="hero-subtitle">Create, edit, and share interactive dashboards with live data</p>
+        </div>
+        
+        <div class="dashboard-grid">
+          {#each Object.entries(dashboards) as [dashboardName, pages]}
+            <article class="card dashboard-card">
+              <div class="card-header">
+                <h3 class="dashboard-title">{dashboardName}</h3>
+                <div class="card-actions">
+                  <button class="button fill" on:click={() => viewDashboard(dashboardName)}>
+                    <i class="material-icons">visibility</i>
+                    <span>View</span>
+                  </button>
+                  <button class="button" on:click={() => editDashboard(dashboardName)}>
+                    <i class="material-icons">edit</i>
+                    <span>Edit</span>
+                  </button>
+                </div>
               </div>
-            </div>
-            <div class="tile-content">
-              <p>{pages.length} page{pages.length === 1 ? '' : 's'}</p>
-              <div class="page-list">
-                {#each pages as page}
-                  <span class="page-tag">{page}</span>
-                {/each}
+              <div class="card-content">
+                <p class="page-count">{pages.length} page{pages.length === 1 ? '' : 's'}</p>
+                <div class="page-tags">
+                  {#each pages as page}
+                    <span class="chip">{page}</span>
+                  {/each}
+                </div>
               </div>
-            </div>
-          </div>
-        {/each}
+            </article>
+          {/each}
+        </div>
       </div>
     </div>
   
   <!-- Consumer View -->
   {:else if currentView === 'consumer'}
-    <div class="consumer-view">
-      <header class="consumer-header">
-        <div class="nav-section">
-          <button class="back-btn" on:click={() => navigateTo('/dashboards')}>← All Dashboards</button>
-          <h1>{currentDashboard} Dashboard</h1>
-        </div>
-        <div class="actions">
-          <button class="edit-btn" on:click={() => editDashboard(currentDashboard)}>🔧 Edit Dashboard</button>
-        </div>
-      </header>
-      
-      <main class="consumer-content">
-        <div class="dashboard-container">
-          <LivePreview {code} />
-        </div>
-      </main>
+    <div class="consumer-view surface">
+      <div class="dashboard-container">
+        <LivePreview {code} />
+      </div>
     </div>
   
   <!-- Edit Mode View -->
   {:else if currentView === 'edit'}
-    <!-- Navigation header for edit mode -->
-    <div class="edit-nav-header">
-      <button class="back-btn" on:click={() => navigateTo('/dashboards')}>← All Dashboards</button>
-      <span class="separator">|</span>
-      <button class="view-btn" on:click={() => viewDashboard(currentDashboard)}>👁️ View Dashboard</button>
-    </div>
-
-    <!-- Floating menu button -->
-    <button class="menu-btn" on:click={toggleDrawer}>☰</button>
-    
-    <!-- Only show drawer and overlay when open -->
-    {#if drawerOpen}
-      <!-- Overlay -->
-      <div class="overlay" on:click={closeDrawer} on:keydown={(e) => e.key === 'Escape' && closeDrawer()} role="button" tabindex="-1"></div>
-      
-      <!-- Drawer -->
-      <div class="drawer">
-        <div class="drawer-header">
-          <h3>Dashboards</h3>
-          <button class="close-btn" on:click={closeDrawer}>×</button>
-        </div>
-        <div class="drawer-content">
-          {#each Object.entries(dashboards) as [dashboard, pages]}
-            <div class="dashboard-group">
-              <div class="dashboard-name">{dashboard}</div>
-              {#each pages as page}
-                <button 
-                  class="page-link" 
-                  class:active={dashboard === currentDashboard && page === currentPage}
-                  on:click={() => handleLoad(dashboard, page)}
-                >
-                  {page}
-                </button>
-              {/each}
-            </div>
-          {/each}
-        </div>
-      </div>
-    {/if}
-
-    <!-- Header -->
-    <div class="header">
-      <span class="current-file">{currentDashboard}/{currentPage}.svelte</span>
-      <button class="save-btn" on:click={handleSave}>Save</button>
-    </div>
-    
-    <!-- Save message -->
+    <!-- Save message snackbar -->
     {#if saveMessage}
-      <div class="save-message">{saveMessage}</div>
+      <div class="snackbar active">
+        <span>{saveMessage}</span>
+      </div>
     {/if}
     
-    <!-- Content area -->
-    <div class="content">
-      <div class="editor">
-        <Monaco bind:value={code} language="svelte" />
+    <!-- Editor layout -->
+    <div class="editor-layout">
+      <div class="editor-panel surface-container">
+        <div class="editor-header">
+          <div class="file-info">
+            <i class="material-icons">description</i>
+            <span class="file-path">{currentDashboard}/{currentPage}.svelte</span>
+          </div>
+          <button class="button fill" on:click={handleSave}>
+            <i class="material-icons">save</i>
+            <span>Save</span>
+          </button>
+        </div>
+        <div class="editor-content">
+          <Monaco bind:value={code} language="svelte" />
+        </div>
       </div>
-      <div class="preview">
-        <LivePreview {code} />
+      
+      <div class="preview-panel surface">
+        <div class="preview-header">
+          <h3 class="preview-title">Live Preview</h3>
+          <button class="button" on:click={() => viewDashboard(currentDashboard)}>
+            <i class="material-icons">open_in_new</i>
+            <span>Full View</span>
+          </button>
+        </div>
+        <div class="preview-content">
+          <LivePreview {code} />
+        </div>
       </div>
     </div>
   {/if}
-</div>
+</main>
 
 <style>
   :global(body) {
     margin: 0;
     padding: 0;
+    background: var(--background);
+    color: var(--on-background);
+    font-family: 'Inter', system-ui, sans-serif;
   }
   
-  .app {
-    height: 100vh;
-    width: 100vw;
-    display: flex;
-    flex-direction: column;
-    font-family: system-ui, sans-serif;
+  .app-main {
+    padding-top: 64px; /* Account for fixed header */
+    min-height: calc(100vh - 64px);
   }
 
   /* Landing Page Styles */
   .landing {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 2rem;
+    min-height: calc(100vh - 64px);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
   }
 
-  .landing-header {
+  .landing-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+  }
+
+  .hero-section {
     text-align: center;
+    color: var(--surface);
+    margin-bottom: 4rem;
+  }
+
+  .hero-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.95;
     color: white;
-    margin-bottom: 3rem;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.4);
   }
 
-  .landing-header h1 {
-    font-size: 3rem;
+  .hero-title {
+    font-size: 3.5rem;
+    margin: 0 0 1rem 0;
+    font-weight: 700;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    color: white;
+  }
+
+  .hero-subtitle {
+    font-size: 1.25rem;
     margin: 0;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-  }
-
-  .landing-header p {
-    font-size: 1.2rem;
-    margin: 1rem 0 0 0;
-    opacity: 0.9;
+    opacity: 0.95;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.3);
   }
 
   .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
+    justify-content: center;
   }
 
-  .dashboard-tile {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-    overflow: hidden;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  .dashboard-card {
+    transition: box-shadow 0.2s ease;
+    height: 100%;
   }
 
-  .dashboard-tile:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 48px rgba(0,0,0,0.15);
+  .dashboard-card:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
   }
 
-  .tile-header {
-    padding: 1.5rem;
-    background: #f8fafc;
-    border-bottom: 1px solid #e2e8f0;
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    gap: 1rem;
+    flex-wrap: wrap;
   }
 
-  .tile-header h3 {
-    margin: 0 0 1rem 0;
-    color: #2d3748;
-    font-size: 1.5rem;
+  .dashboard-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 500;
     text-transform: capitalize;
+    color: var(--on-surface);
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  .tile-actions {
+  .card-actions {
     display: flex;
     gap: 0.5rem;
+    flex-shrink: 0;
+    min-width: 0;
   }
 
-  .view-btn, .edit-btn {
-    padding: 0.75rem 1.5rem;
-    border-radius: 6px;
-    border: none;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    font-size: 0.9rem;
-    cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-
-  .view-btn {
-    background: #10b981;
-    color: white;
-  }
-
-  .view-btn:hover {
-    background: #059669;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  }
-
-  .edit-btn {
-    background: #3b82f6;
-    color: white;
-  }
-
-  .edit-btn:hover {
-    background: #2563eb;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  }
-
-  .tile-content {
-    padding: 1.5rem;
-  }
-
-  .tile-content p {
+  .page-count {
     margin: 0 0 1rem 0;
-    color: #718096;
-    font-size: 0.9rem;
+    color: var(--on-surface-variant);
+    font-size: 0.875rem;
   }
 
-  .page-list {
+  .page-tags {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
   }
 
-  .page-tag {
-    background: #edf2f7;
-    color: #4a5568;
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 500;
+  .chip {
+    font-size: 0.75rem;
   }
 
   /* Consumer View Styles */
   .consumer-view {
-    min-height: 100vh;
-    background: #f7fafc;
-  }
-
-  .consumer-header {
-    background: white;
-    border-bottom: 1px solid #e2e8f0;
-    padding: 1rem 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  }
-
-  .nav-section {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .back-btn {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    color: #3b82f6;
-    font-weight: 500;
-    padding: 0.75rem 1.5rem;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-    cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-
-  .back-btn:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  }
-
-  .consumer-header h1 {
-    margin: 0;
-    color: #2d3748;
-    font-size: 1.8rem;
-    text-transform: capitalize;
-  }
-
-  .consumer-content {
-    padding: 0;
+    min-height: calc(100vh - 64px);
+    background: var(--background);
   }
 
   .dashboard-container {
-    background: white;
     width: 100%;
-    padding: 2rem;
+    height: 100%;
+    background: var(--surface);
   }
 
   /* Edit Mode Styles */
-  .edit-nav-header {
-    background: #1a202c;
-    padding: 0.75rem 1rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    border-bottom: 1px solid #4a5568;
-  }
-
-  .separator {
-    color: #718096;
-  }
-
-  .menu-btn {
+  .snackbar {
     position: fixed;
-    top: 75px;
-    left: 15px;
-    z-index: 1001;
-    background: #3b82f6;
-    color: white;
-    border: none;
-    padding: 12px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 18px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  }
-
-  .menu-btn:hover {
-    background: #2563eb;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  }  .menu-btn:hover {
-    background: #2563eb;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  }
-
-  .overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0,0,0,0.5);
-    z-index: 999;
-  }
-
-  .drawer {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 250px;
-    height: 100vh;
-    background: #2d3748;
-    color: white;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 1000;
-    overflow-y: auto;
-  }
-
-  .drawer-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px;
-    border-bottom: 1px solid #4a5568;
-  }
-
-  .drawer-header h3 {
-    margin: 0;
-    color: white;
-  }
-
-  .close-btn {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 24px;
-    cursor: pointer;
-  }
-
-  .drawer-content {
-    padding: 15px;
-  }
-
-  .dashboard-group {
-    margin-bottom: 20px;
-  }
-
-  .dashboard-name {
-    font-weight: bold;
-    margin-bottom: 10px;
-    color: #cbd5e0;
-    font-size: 14px;
-  }
-
-  .page-link {
-    display: block;
-    width: 100%;
-    background: none;
-    border: none;
-    color: white;
-    padding: 8px 12px;
-    text-align: left;
-    cursor: pointer;
-    margin-bottom: 5px;
-    border-radius: 4px;
-  }
-
-  .page-link:hover {
-    background: #4a5568;
-  }
-
-  .page-link.active {
-    background: #3182ce;
-  }
-
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 20px;
-    background: #2d3748;
-    color: white;
-    border-bottom: 1px solid #4a5568;
-    gap: 1rem;
-  }
-
-  .current-file {
-    font-family: monospace;
-    color: #e2e8f0;
-  }
-
-  .save-btn {
-    background: #3b82f6;
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 6px;
-    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    background: var(--surface-container-high);
+    color: var(--on-surface);
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     font-weight: 500;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 
-  .save-btn:hover {
-    background: #2563eb;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  .snackbar.active {
+    opacity: 1;
   }
 
-  .save-message {
-    padding: 10px 15px;
-    background: #1a202c;
-    color: #e2e8f0;
-    border-bottom: 1px solid #4a5568;
-  }
-
-  .content {
+  .editor-layout {
     display: flex;
-    flex: 1;
+    height: calc(100vh - 64px);
+    background: var(--background);
   }
 
-  .editor {
+  .editor-panel {
     flex: 1;
-    background: #1a202c;
-    border-right: 1px solid #4a5568;
+    min-width: 0; /* Prevent flex item from overflowing */
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--outline-variant);
+    background: var(--surface-container);
   }
 
-  .preview {
+  .editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid var(--outline-variant);
+    background: var(--surface-container-high);
+    min-height: 56px;
+    box-sizing: border-box;
+  }
+
+  .file-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  .file-info i {
+    color: var(--on-surface-variant);
+    font-size: 18px;
+  }
+
+  .file-path {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.8125rem;
+    color: var(--on-surface-variant);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  .editor-content {
     flex: 1;
-    background: #f7fafc;
-    padding: 15px;
+    position: relative;
+    background: var(--surface-container);
+    min-height: 0; /* Allow flex child to shrink */
+  }
+
+  .preview-panel {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+  }
+
+  .preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid var(--outline-variant);
+    background: var(--surface-container);
+    min-height: 56px;
+    box-sizing: border-box;
+  }
+
+  .preview-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--on-surface);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .preview-title::before {
+    content: 'preview';
+    font-family: 'Material Icons';
+    font-size: 18px;
+    color: var(--primary);
+  }
+
+  .preview-content {
+    flex: 1;
     overflow: auto;
+    background: var(--background);
+    min-height: 0;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 1024px) {
+    .editor-layout {
+      flex-direction: column;
+    }
+    
+    .editor-panel {
+      flex: none;
+      height: 50vh;
+      border-right: none;
+      border-bottom: 1px solid var(--outline-variant);
+    }
+    
+    .preview-panel {
+      flex: none;
+      height: 50vh;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .landing-content {
+      padding: 2rem 1rem;
+    }
+    
+    .hero-title {
+      font-size: 2.5rem;
+    }
+    
+    .hero-subtitle {
+      font-size: 1.125rem;
+    }
+    
+    .dashboard-grid {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    
+    
+    .editor-header {
+      flex-direction: column;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .card-header {
+      flex-direction: column;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+    
+    .card-actions {
+      width: 100%;
+    }
+    
+    .card-actions .button {
+      flex: 1;
+    }
   }
 </style>

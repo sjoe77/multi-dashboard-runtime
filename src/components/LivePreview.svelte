@@ -227,100 +227,136 @@
   .dashboard-wrapper {
     width: 100%;
     min-height: 100%;
+    background: var(--background);
+    color: var(--on-background);
   }
 
   .controls-bar {
     display: flex;
     gap: 1rem;
-    padding: 1rem;
-    background: #f8fafc;
-    border-bottom: 1px solid #e2e8f0;
+    padding: 1.5rem;
+    background: var(--surface-container);
+    border-bottom: 1px solid var(--outline-variant);
     margin-bottom: 1.5rem;
     flex-wrap: wrap;
     align-items: center;
     width: 100%;
     box-sizing: border-box;
+    border-radius: 12px 12px 0 0;
   }
 
   .charts-grid {
     width: 100%;
+    padding: 0 1.5rem 1.5rem 1.5rem;
   }
 
   .error-message {
-    background: #fee2e2;
-    border: 1px solid #fecaca;
-    border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 1rem;
+    background: var(--error-container);
+    color: var(--on-error-container);
+    border: 1px solid var(--error);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
   }
 
   .error-message h3 {
-    color: #dc2626;
+    color: var(--on-error-container);
     margin: 0 0 0.5rem 0;
+    font-weight: 600;
+  }
+
+  .error-message::before {
+    content: 'error';
+    font-family: 'Material Icons';
+    font-size: 24px;
+    color: var(--error);
   }
 
   .empty-state {
     text-align: center;
     padding: 4rem 2rem;
-    color: #6b7280;
+    color: var(--on-surface-variant);
   }
 
   .empty-state h3 {
-    color: #374151;
+    color: var(--on-surface);
     margin-bottom: 1rem;
     font-size: 1.5rem;
+    font-weight: 500;
   }
 
   .example {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
+    background: var(--surface-container-high);
+    border: 1px solid var(--outline-variant);
+    border-radius: 12px;
     padding: 1.5rem;
     margin-top: 1.5rem;
     text-align: left;
     max-width: 600px;
     margin-left: auto;
     margin-right: auto;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
   }
 
   .example h4 {
-    color: #1f2937;
+    color: var(--on-surface);
     margin: 0 0 1rem 0;
     font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .example h4::before {
+    content: 'code';
+    font-family: 'Material Icons';
+    font-size: 20px;
+    color: var(--primary);
   }
 
   .example pre {
-    color: #374151;
+    color: var(--on-surface);
     margin: 0;
-    font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
-    font-size: 0.9rem;
-    line-height: 1.5;
-    background: white;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    background: var(--surface-container);
     padding: 1rem;
-    border-radius: 4px;
-    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    border: 1px solid var(--outline-variant);
     overflow-x: auto;
   }
 
   /* Responsive design */
   @media (max-width: 1200px) {
     .charts-grid {
-      grid-template-columns: 1fr;
+      padding: 0 1rem 1rem 1rem;
     }
   }
 
   @media (max-width: 768px) {
     .controls-bar {
-      gap: 1rem;
-      padding: 1rem 0;
-    }
-    
-    .chart-item {
+      gap: 0.75rem;
       padding: 1rem;
+      flex-direction: column;
+      align-items: stretch;
     }
     
     .charts-grid {
-      gap: 1rem;
+      padding: 0 0.75rem 0.75rem 0.75rem;
+    }
+    
+    .example {
+      margin: 1rem;
+      padding: 1rem;
+    }
+    
+    .empty-state {
+      padding: 2rem 1rem;
     }
   }
 </style>

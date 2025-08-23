@@ -27,29 +27,96 @@
         return;
       }
 
-      // Define a light theme for Monaco
-      monaco.editor.defineTheme('light-theme', {
-        base: 'vs',
+      // Define professional themes for Monaco
+      monaco.editor.defineTheme('professional-dark', {
+        base: 'vs-dark',
         inherit: true,
-        rules: [],
+        rules: [
+          { token: '', foreground: 'e6e6e6' },
+          { token: 'comment', foreground: '6a9955', fontStyle: 'italic' },
+          { token: 'keyword', foreground: '569cd6' },
+          { token: 'string', foreground: 'ce9178' },
+          { token: 'number', foreground: 'b5cea8' },
+          { token: 'type', foreground: '4ec9b0' },
+          { token: 'function', foreground: 'dcdcaa' }
+        ],
         colors: {
-          'editor.background': '#ffffff',
-          'editor.foreground': '#000000'
+          'editor.background': '#1e1e1e',
+          'editor.foreground': '#d4d4d4',
+          'editorLineNumber.foreground': '#858585',
+          'editorLineNumber.activeForeground': '#c6c6c6',
+          'editor.lineHighlightBackground': '#2d2d30',
+          'editor.selectionBackground': '#264f78',
+          'editor.inactiveSelectionBackground': '#3a3d41',
+          'editorCursor.foreground': '#aeafad',
+          'editor.wordHighlightBackground': '#575757',
+          'editor.wordHighlightStrongBackground': '#004972',
+          'editorBracketMatch.background': '#0064001a',
+          'editorBracketMatch.border': '#888888'
         }
       });
+
+      monaco.editor.defineTheme('professional-light', {
+        base: 'vs',
+        inherit: true,
+        rules: [
+          { token: '', foreground: '000000' },
+          { token: 'comment', foreground: '008000', fontStyle: 'italic' },
+          { token: 'keyword', foreground: '0000ff' },
+          { token: 'string', foreground: 'a31515' },
+          { token: 'number', foreground: '098658' },
+          { token: 'type', foreground: '267f99' },
+          { token: 'function', foreground: '795e26' }
+        ],
+        colors: {
+          'editor.background': '#ffffff',
+          'editor.foreground': '#000000',
+          'editorLineNumber.foreground': '#237893',
+          'editorLineNumber.activeForeground': '#0b216f',
+          'editor.lineHighlightBackground': '#f0f0f0',
+          'editor.selectionBackground': '#add6ff',
+          'editor.inactiveSelectionBackground': '#e5ebf1',
+          'editorCursor.foreground': '#000000',
+          'editor.wordHighlightBackground': '#57575740',
+          'editor.wordHighlightStrongBackground': '#004972',
+          'editorBracketMatch.background': '#0064001a',
+          'editorBracketMatch.border': '#b9b9b9'
+        }
+      });
+
+      // Detect theme preference
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const theme = isDark ? 'professional-dark' : 'professional-light';
 
       editor = monaco.editor.create(editorDiv, {
         value,
         language: language === 'svelte' ? 'html' : language,
-        theme: 'light-theme',
+        theme: theme,
         automaticLayout: true,
         minimap: { enabled: false },
-        fontSize: 14,
+        fontSize: 13,
+        lineHeight: 20,
+        letterSpacing: 0.5,
+        fontFamily: "'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace",
+        fontLigatures: true,
         lineNumbers: 'on',
         scrollBeyondLastLine: false,
         wordWrap: 'on',
         tabSize: 2,
-        insertSpaces: true
+        insertSpaces: true,
+        renderWhitespace: 'selection',
+        renderLineHighlight: 'all',
+        roundedSelection: false,
+        scrollbar: {
+          vertical: 'auto',
+          horizontal: 'auto',
+          verticalScrollbarSize: 12,
+          horizontalScrollbarSize: 12
+        },
+        padding: {
+          top: 16,
+          bottom: 16
+        }
       });
 
       console.log('Monaco: Editor created successfully');
@@ -58,6 +125,18 @@
       // Listen for content changes
       editor.onDidChangeModelContent(() => {
         value = editor.getValue();
+      });
+
+      // Listen for theme changes
+      const themeObserver = new MutationObserver(() => {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const newTheme = isDark ? 'professional-dark' : 'professional-light';
+        monaco.editor.setTheme(newTheme);
+      });
+      
+      themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-theme']
       });
 
     } catch (error) {
@@ -97,6 +176,9 @@
     height: 100%;
     width: 100%;
     position: relative;
+    background: var(--surface-container);
+    border-radius: 0;
+    overflow: hidden;
   }
 
   .loading {
@@ -104,36 +186,52 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    background: #f8f9fa;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    color: #4a5568;
+    background: var(--surface-container);
+    color: var(--on-surface-variant);
+    font-family: 'Roboto', system-ui, sans-serif;
+    font-size: 0.875rem;
   }
 
   .error {
     height: 100%;
-    background: #fed7d7;
-    border: 1px solid #fc8181;
-    border-radius: 6px;
-    padding: 1rem;
+    background: var(--error-container);
+    color: var(--on-error-container);
+    padding: 1.5rem;
+    font-family: 'Roboto', system-ui, sans-serif;
   }
 
   .error p {
-    margin: 0 0 0.5rem 0;
-    color: #c53030;
+    margin: 0 0 1rem 0;
+    font-weight: 500;
   }
 
   .error textarea {
     width: 100%;
     height: 200px;
-    border: 1px solid #e2e8f0;
-    border-radius: 4px;
-    padding: 0.5rem;
-    font-family: monospace;
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace;
+    font-size: 0.875rem;
+    background: var(--surface);
+    color: var(--on-surface);
     resize: vertical;
   }
 
   .hidden {
     display: none;
+  }
+
+  /* Global Monaco Editor Overrides */
+  :global(.monaco-editor) {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace !important;
+  }
+
+  :global(.monaco-editor .margin) {
+    background: transparent !important;
+  }
+
+  :global(.monaco-editor .monaco-editor-background) {
+    background: transparent !important;
   }
 </style>
