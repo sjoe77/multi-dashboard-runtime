@@ -167,34 +167,37 @@
           <Grid columns={parseInt(gridAttrs.cols || gridAttrs.columns || '3')}>
             {#each gridChildren as component (component.type + Math.random())}
               {@const resolvedAttrs = resolveAttributes(component, inputState)}
-              {#if component.type === 'BarChart'}
-                <BarChart 
-                  data={resolvedAttrs.data || null}
-                  source={resolvedAttrs.source || null}
-                  title={resolvedAttrs.title || 'Bar Chart'}
-                  visible={resolvedAttrs.visible !== 'false'}
-                />
-              {:else if component.type === 'LineChart'}
-                <LineChart 
-                  data={resolvedAttrs.data || null}
-                  source={resolvedAttrs.source || null}
-                  title={resolvedAttrs.title || 'Line Chart'}
-                  visible={resolvedAttrs.visible !== 'false'}
-                />
-              {:else if component.type === 'PieChart'}
-                <PieChart 
-                  data={resolvedAttrs.data || null}
-                  source={resolvedAttrs.source || null}
-                  title={resolvedAttrs.title || 'Pie Chart'}
-                  visible={resolvedAttrs.visible !== 'false'}
-                />
-              {:else if component.type === 'Filter'}
-                <Filter 
-                  label={resolvedAttrs.title || resolvedAttrs.label || 'Filter'} 
-                  type={resolvedAttrs.type || 'dropdown'}
-                  options={resolvedAttrs.options || ['Option 1', 'Option 2', 'Option 3']}
-                  value={resolvedAttrs.value || ''}
-                />
+              {@const shouldShow = shouldShowComponent(component, inputState)}
+              {#if shouldShow}
+                {#if component.type === 'BarChart'}
+                  <BarChart 
+                    data={resolvedAttrs.data || null}
+                    source={resolvedAttrs.source || null}
+                    title={resolvedAttrs.title || 'Bar Chart'}
+                    visible={resolvedAttrs.visible !== 'false'}
+                  />
+                {:else if component.type === 'LineChart'}
+                  <LineChart 
+                    data={resolvedAttrs.data || null}
+                    source={resolvedAttrs.source || null}
+                    title={resolvedAttrs.title || 'Line Chart'}
+                    visible={resolvedAttrs.visible !== 'false'}
+                  />
+                {:else if component.type === 'PieChart'}
+                  <PieChart 
+                    data={resolvedAttrs.data || null}
+                    source={resolvedAttrs.source || null}
+                    title={resolvedAttrs.title || 'Pie Chart'}
+                    visible={resolvedAttrs.visible !== 'false'}
+                  />
+                {:else if component.type === 'Filter'}
+                  <Filter 
+                    label={resolvedAttrs.title || resolvedAttrs.label || 'Filter'} 
+                    type={resolvedAttrs.type || 'dropdown'}
+                    options={resolvedAttrs.options || ['Option 1', 'Option 2', 'Option 3']}
+                    value={resolvedAttrs.value || ''}
+                  />
+                {/if}
               {/if}
             {/each}
           </Grid>
