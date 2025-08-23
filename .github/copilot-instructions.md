@@ -1,4 +1,23 @@
 <!-- Use this file to provide workspace-specific custom instructions to Copilot. For more details, visit https://code.visualstudio.com/docs/copilot/copilot-customization#_use-a-githubcopilotinstructionsmd-file -->
+
+## UI DEVELOPMENT CRITICAL INSTRUCTIONS
+
+**ALWAYS verify UI changes in Simple Browser before claiming success:**
+1. For ANY UI change, use `open_simple_browser` to view the actual result
+2. Do NOT claim changes work without visual verification 
+3. Do NOT apply layers of CSS fixes without identifying root cause
+4. ALWAYS observe current state first, then iterate systematically
+5. When user reports UI issues, inspect the actual rendered output immediately
+
+**Example workflow:**
+- User reports "Monaco is dark theme"
+- FIRST: Open simple browser to see current state
+- IDENTIFY: Which component is actually being used (Monaco vs SimpleEditor)
+- FIX: Make targeted change to correct component
+- VERIFY: Refresh browser to confirm fix worked
+
+## Project Context
+
 - [x] Verify that the copilot-instructions.md file in the .github directory is created.
 	- Confirmed: .github/copilot-instructions.md exists.
 

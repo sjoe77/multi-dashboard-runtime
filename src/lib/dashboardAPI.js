@@ -58,8 +58,18 @@ export async function loadDashboard(dashboardName, pageName) {
 }
 
 export function listDashboards() {
-  const dashboards = {};
+  // In production, this would scan the actual filesystem or query an API
+  // For now, return a hardcoded structure that matches our dashboard files
   
+  // Also check localStorage for any saved dashboards
+  const dashboards = {
+    "sales": ["Overview"],
+    "marketing": ["Overview"], 
+    "operations": ["Overview"],
+    "claims": ["Overview"]
+  };
+  
+  // Add any additional dashboards from localStorage
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (key.startsWith('dashboard_')) {
@@ -71,7 +81,9 @@ export function listDashboards() {
         if (!dashboards[dashboardName]) {
           dashboards[dashboardName] = [];
         }
-        dashboards[dashboardName].push(pageName);
+        if (!dashboards[dashboardName].includes(pageName)) {
+          dashboards[dashboardName].push(pageName);
+        }
       }
     }
   }

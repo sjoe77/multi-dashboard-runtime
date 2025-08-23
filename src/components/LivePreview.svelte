@@ -9,6 +9,7 @@
   import Dropdown from './Dropdown.svelte';
   import { parseComponentStructure } from '../lib/svelteASTParser.js';
   import { resolveInputValues } from '../lib/inputBasedSecurity.js';
+  import { clearCache } from '../lib/dataSources.js';
 
   export let code = '';
   
@@ -46,13 +47,42 @@
     }
     return resolved;
   }
+  
+  // Check if conditional should show based on input state
+  function shouldShowComponent(component, inputState) {
+    // Handle {#if inputs.paramName} conditionals
+    if (component.conditional) {
+      const condition = component.conditional;
+      if (condition.startsWith('inputs.')) {
+        const paramName = condition.substring(7); // Remove 'inputs.'
+        return Boolean(inputState[paramName]);
+      }
+    }
+    return true;
+  }
 
   $: inputState = parsedStructure ? parsedStructure.inputState : {};
   $: inputComponents = parsedStructure ? parsedStructure.inputComponents : [];
   $: displayComponents = parsedStructure ? parsedStructure.displayComponents : [];
+  
+  // Debug logging for input state changes
+  $: {
+    console.log(`🔍 inputState changed:`, inputState);
+    console.log(`🔍 inputState.showCharts:`, inputState.showCharts);
+  }
+  
+  // Handle input value changes
+  function updateInputState(name, value) {
+    console.log(`📝 LivePreview updating inputState["${name}"] from`, inputState[name], 'to', value);
+    inputState = { ...inputState, [name]: value };
+    console.log(`📊 New inputState:`, inputState);
+    
+    // Clear cache when inputs change to force fresh data
+    clearCache();
+  }
 </script>
 
-<div class="preview-container">
+<div class="dashboard-wrapper">
   {#if parseError}
     <div class="error-message">
       <h3>Parse Error:</h3>
@@ -61,14 +91,17 @@
   {:else if parsedStructure && (inputComponents.length > 0 || displayComponents.length > 0)}
     <!-- Render input components first -->
     {#if inputComponents.length > 0}
-      <div class="input-section">
-        <h4>Parameters</h4>
+      <div class="controls-bar">
         {#each inputComponents as component (component.type + component.attributes.name)}
           {#if component.type === 'Toggle'}
             <Toggle 
               name={component.attributes.name || ''}
               label={component.attributes.label || component.attributes.name || 'Toggle'}
               value={component.attributes.value || false}
+              on:change={(e) => {
+                console.log(`📥 LivePreview received change event for "${component.attributes.name}":`, e.detail);
+                updateInputState(component.attributes.name, e.detail);
+              }}
             />
           {:else if component.type === 'Dropdown'}
             <Dropdown 
@@ -83,9 +116,8 @@
     {/if}
     
     <!-- Render display components -->
-    <div class="display-section">
+    <div class="charts-grid">
       {#if displayComponents.length > 0}
-        <h4>Dashboard</h4>
         
         <!-- Separate Grid and non-Grid components -->
         {@const gridComponent = displayComponents.find(c => c.type === 'Grid')}
@@ -95,7 +127,9 @@
         <!-- Render standalone components first -->
         {#each standaloneComponents as component (component.type + Math.random())}
           {@const resolvedAttrs = resolveAttributes(component, inputState)}
-          {#if component.type === 'BarChart'}
+          {@const shouldShow = shouldShowComponent(component, inputState)}
+          {#if shouldShow}
+            {#if component.type === 'BarChart'}
             <BarChart 
               data={resolvedAttrs.data || null}
               source={resolvedAttrs.source || null}
@@ -123,6 +157,7 @@
               options={resolvedAttrs.options || ['Option 1', 'Option 2', 'Option 3']}
               value={resolvedAttrs.value || ''}
             />
+          {/if}
           {/if}
         {/each}
         
@@ -186,69 +221,103 @@
 </div>
 
 <style>
-  .preview-container {
-    height: 100%;
+  .dashboard-wrapper {
+    width: 100%;
+    min-height: 100%;
+  }
+
+  .controls-bar {
+    display: flex;
+    gap: 1rem;
     padding: 1rem;
-    background: #1e1e1e;
-    color: #d4d4d4;
-    overflow-y: auto;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
   }
 
-  .input-section, .display-section {
-    margin-bottom: 2rem;
-  }
-
-  .input-section h4, .display-section h4 {
-    color: #569cd6;
-    margin-bottom: 1rem;
-    border-bottom: 1px solid #404040;
-    padding-bottom: 0.5rem;
+  .charts-grid {
+    width: 100%;
   }
 
   .error-message {
-    background: #3c1e1e;
-    border: 1px solid #ff6b6b;
-    border-radius: 4px;
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
     padding: 1rem;
     margin-bottom: 1rem;
   }
 
   .error-message h3 {
-    color: #ff6b6b;
+    color: #dc2626;
     margin: 0 0 0.5rem 0;
   }
 
   .empty-state {
     text-align: center;
-    padding: 2rem;
+    padding: 4rem 2rem;
+    color: #6b7280;
   }
 
   .empty-state h3 {
-    color: #569cd6;
+    color: #374151;
     margin-bottom: 1rem;
+    font-size: 1.5rem;
   }
 
   .example {
-    background: #2d2d30;
-    border-radius: 4px;
-    padding: 1rem;
-    margin-top: 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
     text-align: left;
-    max-width: 500px;
+    max-width: 600px;
     margin-left: auto;
     margin-right: auto;
   }
 
   .example h4 {
-    color: #4ec9b0;
-    margin: 0 0 0.5rem 0;
+    color: #1f2937;
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
   }
 
   .example pre {
-    color: #d4d4d4;
+    color: #374151;
     margin: 0;
-    font-family: 'Fira Code', 'Courier New', monospace;
+    font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
     font-size: 0.9rem;
-    line-height: 1.4;
+    line-height: 1.5;
+    background: white;
+    padding: 1rem;
+    border-radius: 4px;
+    border: 1px solid #e5e7eb;
+    overflow-x: auto;
+  }
+
+  /* Responsive design */
+  @media (max-width: 1200px) {
+    .charts-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .controls-bar {
+      gap: 1rem;
+      padding: 1rem 0;
+    }
+    
+    .chart-item {
+      padding: 1rem;
+    }
+    
+    .charts-grid {
+      gap: 1rem;
+    }
   }
 </style>

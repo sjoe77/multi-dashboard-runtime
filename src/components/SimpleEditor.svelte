@@ -13,10 +13,10 @@
   style="
     width: 100%; 
     height: 100%; 
-    background: #1e1e1e; 
-    color: #d4d4d4; 
-    border: none; 
-    font-family: 'Courier New', monospace; 
+    background: #ffffff; 
+    color: #000000; 
+    border: 1px solid #e2e8f0; 
+    font-family: 'Fira Code', 'Monaco', 'Consolas', monospace; 
     font-size: 14px; 
     padding: 16px; 
     resize: none; 
@@ -25,6 +25,7 @@
     box-sizing: border-box;
     flex: 1;
     overflow: auto;
+    border-radius: 6px;
   "
 ></textarea>
 

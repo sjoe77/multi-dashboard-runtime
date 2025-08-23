@@ -158,15 +158,19 @@ function walkAST(node, structure, parentComponent = null) {
   else if (node.type === 'IfBlock') {
     const condition = parseCondition(node.expression);
     
-    if (condition && condition.inputRef) {
-      const violations = validateInputReferences(condition.inputRef);
-      structure.errors.push(...violations);
+    if (condition && condition.type === 'expression') {
+      // Extract input reference from condition
+      const conditionStr = extractConditionString(node.expression);
+      const violations = validateInputReferences(conditionStr);
+      if (violations.length > 0) {
+        structure.errors.push(...violations);
+      }
     }
     
-    // Walk the conditional children
+    // Walk the conditional children and mark them as conditional
     if (node.children) {
       node.children.forEach(child => {
-        walkAST(child, structure, parentComponent);
+        walkASTWithCondition(child, structure, parentComponent, node.expression);
       });
     }
   }
@@ -231,6 +235,16 @@ function parseAttributes(attributeNodes) {
           // Handle object data
           console.log('Parsing ObjectExpression for', name);
           attributes[name] = parseObjectExpression(expr);
+        } else if (expr.type === 'MemberExpression') {
+          // Handle expressions like {inputs.showCharts}
+          if (expr.object && expr.object.name === 'inputs' && expr.property) {
+            const paramName = expr.property.name;
+            console.log('Parsing MemberExpression for inputs parameter:', paramName);
+            attributes[name] = `{inputs.${paramName}}`;
+          } else {
+            console.log('Unhandled MemberExpression:', expr);
+            attributes[name] = null;
+          }
         } else {
           console.log('Unhandled expression type:', expr.type, 'for attribute', name);
           attributes[name] = null;
@@ -327,4 +341,75 @@ export function renderParsedStructure(structure) {
     variables: structure.variables,
     errors: structure.errors
   };
+}
+
+/**
+ * Extract condition string from expression AST
+ */
+function extractConditionString(expression) {
+  if (!expression) return '';
+  
+  if (expression.type === 'MemberExpression') {
+    // Handle inputs.paramName
+    if (expression.object?.name === 'inputs' && expression.property?.name) {
+      return `inputs.${expression.property.name}`;
+    }
+  }
+  
+  return '';
+}
+
+/**
+ * Walk AST nodes inside conditional blocks
+ */
+function walkASTWithCondition(node, structure, parentComponent, conditionExpression) {
+  if (!node) return;
+  
+  // Handle element nodes (components) with conditional context
+  if (node.type === 'InlineComponent' || node.type === 'Element') {
+    const componentName = node.name;
+    const attributes = parseAttributes(node.attributes || []);
+    
+    // Validate any input references in attributes
+    for (const [key, value] of Object.entries(attributes)) {
+      const violations = validateInputReferences(value);
+      if (violations.length > 0) {
+        structure.errors.push(...violations);
+      }
+    }
+    
+    const component = {
+      type: componentName,
+      attributes,
+      parent: parentComponent,
+      children: [],
+      conditional: extractConditionString(conditionExpression) // Add conditional info
+    };
+    
+    // Categorize component
+    if (INPUT_COMPONENTS[componentName]) {
+      structure.inputComponents.push(component);
+    } else if (DISPLAY_COMPONENTS[componentName] || ['BarChart', 'LineChart', 'PieChart'].includes(componentName)) {
+      if (parentComponent === 'Grid') {
+        component.insideGrid = true;
+      }
+      structure.displayComponents.push(component);
+    } else {
+      structure.errors.push(`Unknown component: ${componentName}`);
+    }
+    
+    // Handle nested components
+    if (node.children) {
+      node.children.forEach(child => {
+        walkASTWithCondition(child, structure, componentName, conditionExpression);
+      });
+    }
+  }
+  
+  // Handle other block types and continue walking with condition
+  else if (node.children) {
+    node.children.forEach(child => {
+      walkASTWithCondition(child, structure, parentComponent, conditionExpression);
+    });
+  }
 }

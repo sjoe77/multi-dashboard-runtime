@@ -2,20 +2,32 @@
 // Only these components are available in authored dashboards
 
 import Chart from '../components/Chart.svelte';
+import BarChart from '../components/BarChart.svelte';
+import LineChart from '../components/LineChart.svelte';
+import PieChart from '../components/PieChart.svelte';
 import Grid from '../components/Grid.svelte';
 import Filter from '../components/Filter.svelte';
+import Toggle from '../components/Toggle.svelte';
 
 export const globalComponents = {
   Chart,
+  BarChart,
+  LineChart, 
+  PieChart,
   Grid,
-  Filter
+  Filter,
+  Toggle
 };
 
 // Whitelist of allowed imports for security
 export const allowedImports = [
   'Chart',
+  'BarChart',
+  'LineChart',
+  'PieChart',
   'Grid', 
-  'Filter'
+  'Filter',
+  'Toggle'
 ];
 
 export function validateCode(code) {

@@ -2,7 +2,45 @@
 
 ## 🎯 Project Overview
 
-A SvelteKit-based dashboard authoring platform that allows authors to edit `.svelte` files in a live editor with real-time preview, runtime compilation, and security constraints.
+A multi-dashboard runtime platform with role-based access for dashboard consumption and authoring. Built with SvelteKit, it provides both consumer views and live editing capabilities for dashboard authors.
+
+### Multi-Dashboard Architecture
+- **Dashboard Runtime**: Serves multiple dashboards from `/public/dashboards/` directory
+- **Role-Based Access**: Authors get editing capabilities, consumers get view-only
+- **OAuth Proxy Integration**: Frontend by OAuth proxy that handles authentication and routing
+- **Query Delegation**: Data queries routed through OAuth proxy `/query` endpoint
+
+## 🛣️ URL Routing Architecture
+
+### Route Structure
+```
+/dashboards                    → Landing page with dashboard tiles
+/dashboards/{name}             → Consumer view of specific dashboard
+/dashboards/{name}/edit        → Author editing interface with live preview
+```
+
+### User Roles & Access
+- **Dashboard Consumers**: View dashboards at `/dashboards/{name}`
+- **Dashboard Authors**: Edit dashboards at `/dashboards/{name}/edit` (wrench icon access)
+- **Current Implementation**: Everyone is treated as dashboard author
+
+### OAuth Proxy Integration
+```
+┌─────────────────┐    /dashboards/*    ┌─────────────────────┐
+│   OAuth Proxy   │ ─────────────────→ │ Dashboard Runtime   │
+│                 │                     │ (SvelteKit App)     │
+│   - Auth        │ ←─ /query/* ─────── │                     │
+│   - Routing     │                     │ - Multi-dashboard   │
+│   - Data APIs   │                     │ - Live editing      │
+└─────────────────┘                     └─────────────────────┘
+```
+
+### Examples
+- `/dashboards` → Shows tiles for sales, marketing, operations dashboards
+- `/dashboards/sales` → Consumer view of sales dashboard with charts/filters
+- `/dashboards/sales/edit` → Live editor for sales dashboard authors
+- `/dashboards/marketing` → Consumer view of marketing dashboard
+- `/dashboards/marketing/edit` → Live editor for marketing dashboard
 
 ## 🏗️ Architecture
 
@@ -104,6 +142,73 @@ A SvelteKit-based dashboard authoring platform that allows authors to edit `.sve
 <Chart data="{fetch('/api')}" />
 <Chart title="{document.title}" />
 ```
+
+### AST Parser & Input State System
+
+#### Svelte AST Compilation Pipeline
+The security system uses Svelte's built-in AST parser to analyze dashboard code:
+
+```javascript
+// svelteASTParser.js - Core security enforcement
+export function parseComponentStructure(source) {
+  const ast = svelte.parse(source);
+  
+  // SECURITY CHECK: Reject any script blocks
+  if (ast.instance || ast.module) {
+    structure.errors.push('Script blocks not allowed. Use input components for parameters.');
+    return structure;
+  }
+  
+  // Parse input components (Toggle, Dropdown, etc.)
+  // Parse display components (Chart, Grid, etc.)
+  // Initialize input state from component attributes
+}
+```
+
+#### Input State Context System
+Input components automatically populate a reactive `inputs` context:
+
+```svelte
+<!-- Input components generate state -->
+<Toggle name="showCharts" label="Show Charts" value="true" />
+<Dropdown name="region" options="North,South,East,West" value="North" />
+
+<!-- Display components consume from inputs context -->
+{#if inputs.showCharts}
+  <BarChart source="sales" filter="region={inputs.region}" />
+{/if}
+```
+
+**State Flow:**
+1. **AST Parse**: Extract input components and their default values
+2. **State Init**: `inputs = { showCharts: true, region: "North" }`
+3. **Reactive Context**: Components access `inputs.paramName`
+4. **UI Updates**: Toggle changes → state updates → display re-renders
+
+#### Component Communication Architecture
+```
+┌─────────────────┐    generates     ┌─────────────────┐
+│ Input Components│ ───────────────→ │   inputs.*      │
+│ - Toggle        │                  │   State Context │
+│ - Dropdown      │                  │                 │
+│ - DateRange     │                  │                 │
+└─────────────────┘                  └─────────────────┘
+                                             │
+                                             │ consumes
+                                             ▼
+                                     ┌─────────────────┐
+                                     │Display Components│
+                                     │ - BarChart      │
+                                     │ - LineChart     │
+                                     │ - Grid          │
+                                     └─────────────────┘
+```
+
+#### Security Validation Rules
+- **Script Block Detection**: `ast.instance || ast.module` → Reject
+- **Input Reference Validation**: Only `{inputs.paramName}` patterns allowed
+- **Component Whitelist**: Unknown components → Error
+- **Expression Safety**: No JavaScript evaluation, only parameter substitution
 
 ## 📊 Data Architecture & Sources
 

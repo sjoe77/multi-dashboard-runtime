@@ -7,8 +7,42 @@
   export let title = 'Line Chart';
   export let visible = true;
   
+  // Clear field mapping
+  export let x = null;        // Field name for x-axis (category/time)
+  export let y = null;        // Field name for y-axis (value)
+  
   let chartDiv;
   let chart;
+
+  // Auto-detect field names if not specified
+  function detectFields(data) {
+    if (!data || !Array.isArray(data) || data.length === 0) return { xField: null, yField: null };
+    
+    const firstRow = data[0];
+    const fields = Object.keys(firstRow);
+    
+    // Try to detect x-axis field (time/category)
+    let xField = x;
+    if (!xField) {
+      xField = fields.find(f => 
+        f.toLowerCase().includes('time') || 
+        f.toLowerCase().includes('date') || 
+        f.toLowerCase().includes('month') ||
+        f.toLowerCase().includes('period') ||
+        f.toLowerCase().includes('hour')
+      ) || fields[0];
+    }
+    
+    // Try to detect y-axis field (numeric)
+    let yField = y;
+    if (!yField) {
+      yField = fields.find(f => 
+        typeof firstRow[f] === 'number' && f !== xField
+      ) || fields[1];
+    }
+    
+    return { xField, yField };
+  }
 
   // Priority: data (hardcoded) overrides source (SQL)
   $: chartData = (() => {
@@ -38,8 +72,11 @@
     }
     
     // Fallback
-    return [{ month: 'No Data', users: 0 }];
+    return [{ time: 'No Data', value: 0 }];
   })();
+
+  // Auto-detect fields based on data
+  $: ({ xField, yField } = detectFields(chartData));
 
   $: chartOption = {
     title: { 
@@ -60,7 +97,7 @@
     },
     xAxis: {
       type: 'category',
-      data: chartData.map(d => d.month || d.name || d.category),
+      data: chartData.map(d => d[xField]),
       axisLine: { lineStyle: { color: '#404040' } },
       axisLabel: { color: '#d4d4d4' }
     },
@@ -72,7 +109,7 @@
     },
     series: [{
       type: 'line',
-      data: chartData.map(d => d.users || d.value || d.amount),
+      data: chartData.map(d => d[yField]),
       lineStyle: {
         color: '#4ec9b0'
       },
