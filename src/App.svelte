@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import SimpleEditor from './components/SimpleEditor.svelte';
+  import Monaco from './components/Monaco.svelte';
   import LivePreview from './components/LivePreview.svelte';
   import { saveDashboard, loadDashboard, listDashboards } from './lib/dashboardAPI.js';
   
@@ -271,7 +272,7 @@
     <!-- Content area -->
     <div class="content">
       <div class="editor">
-        <SimpleEditor bind:value={code} />
+        <Monaco bind:value={code} language="svelte" />
       </div>
       <div class="preview">
         <LivePreview {code} />

@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 3000",
     "build": "vite build",
     "preview": "vite preview"
   },
@@ -16,6 +16,7 @@
   "dependencies": {
     "echarts": "^5.6.0",
     "monaco-editor": "^0.52.2",
-    "svelte-echarts": "^1.0.0"
+    "svelte-echarts": "^1.0.0",
+    "vite-plugin-monaco-editor": "^1.1.0"
   }
 }
