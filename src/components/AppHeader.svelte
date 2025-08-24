@@ -25,12 +25,10 @@
 <header class="surface-container">
   <nav class="responsive">
     <div class="left-section">
-      <!-- Hamburger menu (only show in edit mode) -->
-      {#if currentView === 'edit'}
-        <button class="transparent circle large" on:click={openDrawer}>
-          <i class="material-icons">menu</i>
-        </button>
-      {/if}
+      <!-- Hamburger menu -->
+      <button class="transparent circle" on:click={openDrawer}>
+        <i class="material-icons">menu</i>
+      </button>
       
       <!-- Logo/Brand -->
       <button class="transparent" on:click={navigateHome}>

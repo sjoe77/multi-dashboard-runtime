@@ -33,32 +33,30 @@
 <nav class="left max" class:active={isOpen}>
   <!-- Header with close button -->
   <div class="drawer-header">
-    <a 
-      on:click={navigateHome} 
-      on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && navigateHome()}
-      role="button" 
-      tabindex="0"
-      href="javascript:void(0)"
-    >
+    <div class="header-title">
       <i>dashboard</i>
-      <div>Dashboards</div>
-    </a>
+      <div>Navigation</div>
+    </div>
     <button class="transparent circle small" on:click={closeDrawer}>
       <i>close</i>
     </button>
   </div>
   
-  <!-- Navigation items -->
+  <!-- Home navigation -->
   <a 
     on:click={navigateHome} 
     on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && navigateHome()}
     role="button" 
     tabindex="0"
     href="javascript:void(0)"
+    class="nav-item"
   >
     <i>home</i>
     <div>All Dashboards</div>
   </a>
+  
+  <!-- Divider -->
+  <div class="nav-divider"></div>
   
   <!-- Dashboard list -->
   {#each Object.entries(dashboards) as [dashboardName, pages]}
@@ -123,33 +121,41 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1rem;
+    padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--outline-variant);
+    background: var(--surface-container-high);
   }
   
-  .dashboard-section {
+  .header-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--on-surface);
+  }
+  
+  .nav-divider {
+    height: 1px;
+    background: var(--outline-variant);
     margin: 0.5rem 0;
   }
   
-  .dashboard-header {
-    padding: 0.5rem 1rem;
-    color: var(--on-surface-variant);
-    font-weight: 500;
-    font-size: 0.875rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  .dashboard-section {
+    margin: 0.25rem 0;
   }
   
-  .page-link {
-    margin-left: 1rem;
+  .dashboard-header {
+    padding: 0.4rem 1rem;
+    color: var(--on-surface-variant);
+    font-weight: 500;
+    font-size: 0.8125rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    transition: background-color 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
+  
   
   .page-link:hover {
     background: var(--surface-container-high);
@@ -164,24 +170,61 @@
     margin-left: auto;
   }
   
-  /* Ensure proper Beer CSS nav item spacing */
-  nav.left a {
+  /* Override Beer CSS nav constraints */
+  nav.left {
+    padding: 0;
+  }
+  
+  .nav-item {
+    display: block;
+    margin: 0.25rem 0.5rem;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .nav-item a, .nav-item {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    border-radius: 6px;
+    padding: 0.6rem 1rem;
     transition: background-color 0.2s ease;
     text-decoration: none;
     color: var(--on-surface);
+    font-weight: 500;
+    box-sizing: border-box;
+    width: 100%;
   }
   
-  nav.left a:hover {
+  .nav-item:hover {
     background: var(--surface-container-high);
   }
   
-  nav.left a i {
+  .nav-item i {
     font-size: 20px;
+    color: var(--on-surface-variant);
+    flex-shrink: 0;
+  }
+  
+  .page-link {
+    display: block;
+    margin: 0.125rem 0.5rem 0.125rem 1.5rem;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  
+  .page-link a, .page-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 1rem;
+    transition: background-color 0.2s ease;
+    font-size: 0.875rem;
+    box-sizing: border-box;
+    width: 100%;
+  }
+  
+  nav.left i {
+    font-size: 18px;
     color: var(--on-surface-variant);
     flex-shrink: 0;
   }

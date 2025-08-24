@@ -137,18 +137,13 @@
     setTimeout(() => saveMessage = '', 3000);
   }
   
-  async function handleDrawerSelect(event) {
+  function handleDrawerSelect(event) {
     const { dashboard, page } = event.detail;
-    const result = await loadDashboard(dashboard, page);
-    if (result.success) {
-      code = result.source;
-      currentDashboard = dashboard;
-      currentPage = page;
-      saveMessage = `📁 Loaded ${dashboard}/${page}`;
-      setTimeout(() => saveMessage = '', 2000);
-      
-      navigateTo(`/dashboards/${dashboard}/edit`);
-    }
+    currentDashboard = dashboard;
+    currentPage = page;
+    
+    // Navigate to the dashboard edit page
+    navigateTo(`/dashboards/${dashboard}/edit`);
   }
   
   function viewDashboard(dashboardName) {
