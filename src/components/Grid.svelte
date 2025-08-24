@@ -1,6 +1,6 @@
 <script>
   export let columns = 2;
-  export let rows = 1;
+  export const rows = 1;
 </script>
 
 <div class="dashboard-grid" style="grid-template-columns: repeat({columns}, 1fr);">

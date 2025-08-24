@@ -14,6 +14,7 @@
   
   let chartDiv;
   let chart;
+  let ro;
   let chartData = [];
   let loading = false;
   let lastLoadedSource = null; // Track what we last loaded to prevent duplicates
@@ -158,6 +159,10 @@
     }]
   } : null;
 
+  function resize() {
+    if (chart) chart.resize();
+  }
+
   onMount(async () => {
     console.log('BarChart onMount - visible:', visible, 'chartDiv:', chartDiv);
     
@@ -170,6 +175,12 @@
       console.log('BarChart initialized chart:', chart);
       chart.setOption(chartOption);
       console.log('BarChart set option:', chartOption);
+      if (window.ResizeObserver) {
+        ro = new ResizeObserver(() => resize());
+        ro.observe(chartDiv);
+      }
+      window.addEventListener('resize', resize);
+      setTimeout(resize, 0);
     }
   });
 
@@ -187,6 +198,8 @@
   }
 
   onDestroy(() => {
+    window.removeEventListener('resize', resize);
+    if (ro) ro.disconnect();
     if (chart) {
       chart.dispose();
     }

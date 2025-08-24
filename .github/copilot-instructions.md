@@ -2,6 +2,14 @@
 
 ## UI DEVELOPMENT CRITICAL INSTRUCTIONS
 
+**BEER CSS PHILOSOPHY - ABSOLUTELY CRITICAL:**
+1. **ALWAYS use Beer CSS semantic classes and helpers FIRST** - Never custom CSS unless absolutely necessary
+2. **Follow Beer CSS patterns exactly** - Don't fight the framework with custom overrides
+3. **Read beercss.md before ANY UI changes** - It contains specific patterns and anti-patterns
+4. **Use semantic HTML structure** - Beer CSS expects proper HTML elements (nav, header, menu, etc.)
+5. **Leverage helpers** - Use spacing, positioning, and layout helpers instead of custom CSS
+6. **Test with framework, not against it** - Work with Beer CSS patterns, don't override them
+
 **ALWAYS verify UI changes in Simple Browser before claiming success:**
 1. For ANY UI change, use `open_simple_browser` to view the actual result
 2. Do NOT claim changes work without visual verification 

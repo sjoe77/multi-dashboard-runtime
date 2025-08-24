@@ -112,11 +112,17 @@
   
   // Event handlers
   function handleOpenDrawer() {
-    drawerOpen = true;
+  console.log('handleOpenDrawer called, current drawerOpen:', drawerOpen);
+  drawerOpen = true;
+  console.log('drawerOpen set to:', drawerOpen);
+  setTimeout(() => window.dispatchEvent(new Event('resize')), 200);
   }
   
   function handleCloseDrawer() {
-    drawerOpen = false;
+  console.log('handleCloseDrawer called, current drawerOpen:', drawerOpen);
+  drawerOpen = false;
+  console.log('drawerOpen set to:', drawerOpen);
+  setTimeout(() => window.dispatchEvent(new Event('resize')), 200);
   }
   
   function handleNavigate(event) {
@@ -155,16 +161,7 @@
   }
 </script>
 
-<!-- App Header -->
-<AppHeader 
-  {currentDashboard} 
-  {currentPage} 
-  {currentView}
-  on:open-drawer={handleOpenDrawer}
-  on:navigate={handleNavigate}
-/>
-
-<!-- App Drawer -->
+<!-- App Drawer (Beer CSS requires drawer before other elements) -->
 <AppDrawer 
   isOpen={drawerOpen} 
   {dashboards}
@@ -175,7 +172,18 @@
   on:navigate={handleNavigate}
 />
 
-<main class="app-main">
+<!-- App Header -->
+<AppHeader 
+  {currentDashboard} 
+  {currentPage} 
+  {currentView}
+  drawerOpen={drawerOpen}
+  on:open-drawer={handleOpenDrawer}
+  on:navigate={handleNavigate}
+  on:view-mode={(e) => currentView = e.detail}
+/>
+
+<main class="app-main" class:drawer-open={drawerOpen}>
   <!-- Landing Page View -->
   {#if currentView === 'landing'}
     <div class="landing surface-container">
@@ -186,27 +194,26 @@
           <p class="hero-subtitle">Create, edit, and share interactive dashboards with live data</p>
         </div>
         
-        <div class="dashboard-grid">
+        <!-- Beer CSS Dashboard Grid -->
+        <div class="grid">
           {#each Object.entries(dashboards) as [dashboardName, pages]}
-            <article class="card dashboard-card">
-              <div class="card-header">
-                <h3 class="dashboard-title">{dashboardName}</h3>
-                <div class="card-actions">
-                  <button class="button fill" on:click={() => viewDashboard(dashboardName)}>
-                    <i class="material-icons">visibility</i>
-                    <span>View</span>
+            <article class="card">
+              <div class="row">
+                <h5 class="max">{dashboardName}</h5>
+                <div class="row">
+                  <button class="small-round" on:click={() => viewDashboard(dashboardName)}>
+                    <i>visibility</i>
                   </button>
-                  <button class="button" on:click={() => editDashboard(dashboardName)}>
-                    <i class="material-icons">edit</i>
-                    <span>Edit</span>
+                  <button class="small-round" on:click={() => editDashboard(dashboardName)}>
+                    <i>edit</i>
                   </button>
                 </div>
               </div>
-              <div class="card-content">
-                <p class="page-count">{pages.length} page{pages.length === 1 ? '' : 's'}</p>
-                <div class="page-tags">
+              <div>
+                <p class="small-text">{pages.length} page{pages.length === 1 ? '' : 's'}</p>
+                <div class="row wrap">
                   {#each pages as page}
-                    <span class="chip">{page}</span>
+                    <span class="chip small">{page}</span>
                   {/each}
                 </div>
               </div>
@@ -277,13 +284,19 @@
   }
   
   .app-main {
-    padding-top: 64px; /* Account for fixed header */
-    min-height: calc(100vh - 64px);
+    padding-top: 0; /* Beer CSS handles header offset */
+    min-height: 100vh;
+    transition: margin-left 0.3s ease;
+    margin-left: 0;
+  }
+
+  .app-main.drawer-open {
+    margin-left: 280px;
   }
 
   /* Landing Page Styles */
   .landing {
-    min-height: calc(100vh - 64px);
+  min-height: 100vh;
     background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
   }
 
@@ -324,70 +337,11 @@
     text-shadow: 0 1px 4px rgba(0,0,0,0.3);
   }
 
-  .dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 2rem;
-    justify-content: center;
-  }
-
-  .dashboard-card {
-    transition: box-shadow 0.2s ease;
-    height: 100%;
-  }
-
-  .dashboard-card:hover {
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-  }
-
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-
-  .dashboard-title {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 500;
-    text-transform: capitalize;
-    color: var(--on-surface);
-    flex: 1;
-    min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .card-actions {
-    display: flex;
-    gap: 0.5rem;
-    flex-shrink: 0;
-    min-width: 0;
-  }
-
-  .page-count {
-    margin: 0 0 1rem 0;
-    color: var(--on-surface-variant);
-    font-size: 0.875rem;
-  }
-
-  .page-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
-  .chip {
-    font-size: 0.75rem;
-  }
+  /* Cards now use Beer CSS semantic classes - minimal custom styling needed */
 
   /* Consumer View Styles */
   .consumer-view {
-    min-height: calc(100vh - 64px);
+  min-height: 100vh;
     background: var(--background);
   }
 
@@ -419,8 +373,8 @@
   }
 
   .editor-layout {
-    display: flex;
-    height: calc(100vh - 64px);
+  display: flex;
+  height: 100vh;
     background: var(--background);
   }
 
@@ -549,32 +503,10 @@
       font-size: 1.125rem;
     }
     
-    .dashboard-grid {
-      grid-template-columns: 1fr;
-      gap: 1.5rem;
-    }
-    
-    
     .editor-header {
       flex-direction: column;
       gap: 1rem;
       align-items: flex-start;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .card-header {
-      flex-direction: column;
-      gap: 1rem;
-      align-items: flex-start;
-    }
-    
-    .card-actions {
-      width: 100%;
-    }
-    
-    .card-actions .button {
-      flex: 1;
     }
   }
 </style>

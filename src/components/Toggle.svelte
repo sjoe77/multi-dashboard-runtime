@@ -18,10 +18,11 @@
   }
 </script>
 
-<nav class="toggle-nav">
-  <div class="max">
-    <span>{label}</span>
-  </div>
+<!-- Beer CSS Switch with proper semantic structure -->
+<div class="field border">
+  <nav class="max">
+    <span class="helper">{label}</span>
+  </nav>
   <label class="switch">
     <input 
       type="checkbox" 
@@ -31,34 +32,5 @@
     />
     <span></span>
   </label>
-</nav>
-
-<style>
-  .toggle-nav {
-    padding: 0.5rem 1rem;
-    margin: 0.25rem 0;
-    border-radius: 6px;
-    background: var(--surface-container);
-    border: 1px solid var(--outline-variant);
-    align-items: center;
-    min-height: 48px;
-    box-sizing: border-box;
-  }
-
-  .toggle-nav:hover {
-    background: var(--surface-container-high);
-    border-color: var(--primary);
-  }
-
-  .toggle-nav .max {
-    display: flex;
-    align-items: center;
-  }
-
-  .toggle-nav span {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--on-surface);
-  }
-</style>
+</div>
 

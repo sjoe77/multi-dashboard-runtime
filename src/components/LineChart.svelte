@@ -13,6 +13,7 @@
   
   let chartDiv;
   let chart;
+  let ro;
 
   // Auto-detect field names if not specified
   function detectFields(data) {
@@ -119,10 +120,20 @@
     }]
   };
 
+  function resize() {
+    if (chart) chart.resize();
+  }
+
   onMount(() => {
     if (visible && chartDiv) {
       chart = echarts.init(chartDiv);
       chart.setOption(chartOption);
+      if (window.ResizeObserver) {
+        ro = new ResizeObserver(() => resize());
+        ro.observe(chartDiv);
+      }
+      window.addEventListener('resize', resize);
+      setTimeout(resize, 0);
     }
   });
 
@@ -131,6 +142,8 @@
   }
 
   onDestroy(() => {
+    window.removeEventListener('resize', resize);
+    if (ro) ro.disconnect();
     if (chart) {
       chart.dispose();
     }

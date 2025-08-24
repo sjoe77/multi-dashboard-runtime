@@ -8,224 +8,188 @@
   
   const dispatch = createEventDispatcher();
   
-  function closeDrawer() {
+    function closeDrawer() {
+    console.log('closeDrawer called');
+    // Use only Svelte state management
     dispatch('close');
+  }
+
+  // Handle ESC key to close drawer
+  function handleKeydown(event) {
+    if (event.key === 'Escape' && isOpen) {
+      closeDrawer();
+    }
+  }
+  
+  function navigate(url) {
+    console.log('navigate called with:', url);
+    dispatch('navigate', url);
+    // Don't close drawer automatically - let it stay open for navigation
   }
   
   function selectDashboard(dashboard, page) {
+    console.log('selectDashboard called with:', dashboard, page);
     dispatch('select', { dashboard, page });
-    closeDrawer();
-  }
-  
-  function navigateHome() {
-    dispatch('navigate', '/dashboards');
-    closeDrawer();
+    navigate(`/dashboards/${dashboard}/edit`);
+    // Don't auto-close drawer - let user keep it open for more navigation
   }
 </script>
 
-<!-- Overlay -->
-{#if isOpen}
-  <div class="overlay" on:click={closeDrawer} on:keydown={(e) => e.key === 'Escape' && closeDrawer()} role="button" tabindex="-1"></div>
-{/if}
+<svelte:window on:keydown={handleKeydown} />
 
-<!-- Drawer -->
-<!-- Beer CSS Left Navigation Drawer -->
-<nav class="left max" class:active={isOpen}>
-  <!-- Header with close button -->
-  <div class="drawer-header">
-    <div class="header-title">
-      <i>dashboard</i>
-      <div>Navigation</div>
-    </div>
-    <button class="transparent circle small" on:click={closeDrawer}>
+<!-- No overlay needed for push-content layout -->
+
+<!-- Clean Docs-Style Navigation -->
+<nav class="left drawer scroll" class:active={isOpen} id="drawer">
+  <header class="docs-header">
+    <button class="circle transparent" on:click={closeDrawer}>
       <i>close</i>
     </button>
-  </div>
+    <h6>Dashboards</h6>
+  </header>
   
-  <!-- Home navigation -->
-  <a 
-    on:click={navigateHome} 
-    on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && navigateHome()}
-    role="button" 
-    tabindex="0"
-    href="javascript:void(0)"
-    class="nav-item"
-  >
-    <i>home</i>
-    <div>All Dashboards</div>
-  </a>
-  
-  <!-- Divider -->
-  <div class="nav-divider"></div>
-  
-  <!-- Dashboard list -->
-  {#each Object.entries(dashboards) as [dashboardName, pages]}
-    <div class="dashboard-section">
-      <div class="dashboard-header">
-        <i>folder_open</i>
-        <div>{dashboardName}</div>
+  <div class="docs-nav">
+    <a href="/dashboards" class="docs-item home-item" on:click|preventDefault={() => navigate('/dashboards')}>
+      <i>home</i>
+      <span>Home</span>
+    </a>
+    
+    {#each Object.entries(dashboards) as [name, pages]}
+      <div class="docs-section">
+        <div class="docs-section-title">{name}</div>
+        {#each pages as page}
+          <a
+            href={`/dashboards/${name}/edit`}
+            class="docs-item docs-page"
+            class:active={name === currentDashboard && page === currentPage}
+            on:click|preventDefault={() => selectDashboard(name, page)}
+          >
+            <i>description</i>
+            <span>{page}</span>
+          </a>
+        {/each}
       </div>
-      
-      <!-- Dashboard pages -->
-      {#each pages as page}
-        <a 
-          on:click={() => selectDashboard(dashboardName, page)} 
-          on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && selectDashboard(dashboardName, page)}
-          role="button"
-          tabindex="0"
-          href="javascript:void(0)"
-          class:active={dashboardName === currentDashboard && page === currentPage}
-          class="page-link"
-        >
-          <i>description</i>
-          <div>{page}</div>
-          {#if dashboardName === currentDashboard && page === currentPage}
-            <i class="right">check</i>
-          {/if}
-        </a>
-      {/each}
-    </div>
-  {/each}
-</nav>
-
-<style>
-  .overlay {
+    {/each}
+  </div>
+</nav><style>
+  /* Minimal positioning only */
+  .drawer {
     position: fixed;
     top: 0;
-    left: 0;
-    width: 100vw;
+    left: -280px;
+    width: 280px;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 200;
-    backdrop-filter: blur(2px);
+    z-index: 100;
+    transition: left 0.3s ease;
+    background: var(--surface-container);
+    border-right: 1px solid var(--outline-variant);
   }
   
-  /* Beer CSS nav.left customizations */
-  nav.left {
-    position: fixed;
-    top: 0;
+  .drawer.active {
     left: 0;
-    height: 100vh;
-    z-index: 300;
-    transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-    width: 320px;
-    box-shadow: 0 8px 10px -5px rgba(0,0,0,0.2), 0 16px 24px 2px rgba(0,0,0,0.14), 0 6px 30px 5px rgba(0,0,0,0.12);
   }
   
-  nav.left.active {
-    transform: translateX(0);
-  }
-  
-  .drawer-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.75rem 1rem;
+  /* Docs-style navigation */
+  .docs-header {
+    padding: 1rem;
     border-bottom: 1px solid var(--outline-variant);
-    background: var(--surface-container-high);
   }
   
-  .header-title {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 600;
-    color: var(--on-surface);
+  .docs-nav {
+    padding: 0;
+    width: 100%;
   }
   
-  .nav-divider {
-    height: 1px;
-    background: var(--outline-variant);
-    margin: 0.5rem 0;
+  .docs-section {
+    margin-bottom: 0.25rem;
+    width: 100%;
   }
   
-  .dashboard-section {
-    margin: 0.25rem 0;
-  }
-  
-  .dashboard-header {
-    padding: 0.4rem 1rem;
+  .docs-section-title {
+    font-size: 0.7rem;
+    font-weight: 700;
     color: var(--on-surface-variant);
-    font-weight: 500;
-    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 0.75rem 1rem 0.375rem 1rem;
+    margin-bottom: 0.125rem;
+    width: 100%;
+    box-sizing: border-box;
+    border-top: 1px solid var(--outline-variant);
+    margin-top: 0.25rem;
+  }
+  
+  .docs-section:first-child .docs-section-title {
+    border-top: none;
+    margin-top: 0;
+  }
+  
+  .docs-item {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    padding: 0.5rem 0;
+    color: var(--on-surface);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border-radius: 0;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    min-height: 44px;
   }
   
-  
-  .page-link:hover {
+  .docs-item:hover {
     background: var(--surface-container-high);
+    color: var(--primary);
   }
   
-  .page-link.active {
+  .docs-item.active {
     background: var(--primary-container);
     color: var(--on-primary-container);
-  }
-  
-  .right {
-    margin-left: auto;
-  }
-  
-  /* Override Beer CSS nav constraints */
-  nav.left {
-    padding: 0;
-  }
-  
-  .nav-item {
-    display: block;
-    margin: 0.25rem 0.5rem;
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  
-  .nav-item a, .nav-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.6rem 1rem;
-    transition: background-color 0.2s ease;
-    text-decoration: none;
-    color: var(--on-surface);
+    position: relative;
+    width: 100%;
+    margin: 0;
+    padding-right: 0;
     font-weight: 500;
-    box-sizing: border-box;
-    width: 100%;
   }
   
-  .nav-item:hover {
-    background: var(--surface-container-high);
+  .docs-item.active::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--primary);
   }
   
-  .nav-item i {
-    font-size: 20px;
-    color: var(--on-surface-variant);
+  .docs-item i {
+    margin-right: 0.5rem;
+    margin-left: 1rem;
+    font-size: 1rem;
+    opacity: 0.8;
     flex-shrink: 0;
+    width: 1rem;
+    text-align: left;
   }
   
-  .page-link {
-    display: block;
-    margin: 0.125rem 0.5rem 0.125rem 1.5rem;
-    border-radius: 6px;
-    overflow: hidden;
-  }
-  
-  .page-link a, .page-link {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.4rem 1rem;
-    transition: background-color 0.2s ease;
+  .docs-item span {
     font-size: 0.875rem;
-    box-sizing: border-box;
-    width: 100%;
+    font-weight: inherit;
+    margin-right: 1rem;
+    flex: 1;
   }
   
-  nav.left i {
-    font-size: 18px;
-    color: var(--on-surface-variant);
-    flex-shrink: 0;
+  .docs-page {
+    padding-left: 0;
+  }
+  
+  .docs-page i {
+    margin-left: 2rem;
+  }
+  
+  .home-item {
+    border-bottom: 1px solid var(--outline-variant);
+    margin-bottom: 0.25rem;
   }
 </style>
