@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Monaco Debug</title>
+  <!-- Beer CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/beercss@3.11.33/dist/cdn/beer.min.css" rel="stylesheet" />
+  <style>
+    .debug-container {
+      width: 100%;
+      height: 400px;
+      border: 2px solid red;
+    }
+  </style>
+</head>
+<body>
+  <h1>Monaco with Beer CSS Debug</h1>
+  <div class="debug-container" id="container"></div>
+  
+  <script type="module">
+    import * as monaco from 'https://cdn.skypack.dev/monaco-editor';
+    
+    const editor = monaco.editor.create(document.getElementById('container'), {
+      value: `<Toggle name="showCharts" label="Show Charts" value="true" />
+<BarChart 
+  title="Campaign Performance"
+  x="campaign"
+  y="conversions"
+  data={[
+    {campaign:"Email", conversions:150},
+    {campaign:"Social", conversions:95},
+    {campaign:"Search", conversions:220},
+  ]}
+/>`,
+      language: 'html',
+      theme: 'vs-dark',
+      lineNumbers: 'on',
+      fontSize: 14,
+      lineHeight: 21
+    });
+  </script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 // Save/Load API for dashboard persistence
 // In production, this would be a backend service
 
-export async function saveDashboard(dashboardName, pageName, svelteCode) {
+export async function saveDashboard(dashboardName, pageName, svelteCode, sqlCode = '') {
   try {
     // Compile the code first to check for errors
     const { compileSvelte } = await import('./compileSvelte.js');
@@ -15,6 +15,7 @@ export async function saveDashboard(dashboardName, pageName, svelteCode) {
     const storageKey = `dashboard_${dashboardName}_${pageName}`;
     const dashboardData = {
       source: svelteCode,
+      sql: sqlCode,
       compiled: result.code,
       warnings: result.warnings,
       lastModified: new Date().toISOString()
@@ -25,7 +26,7 @@ export async function saveDashboard(dashboardName, pageName, svelteCode) {
     return { 
       success: true, 
       warnings: result.warnings,
-      message: `Saved ${dashboardName}/${pageName}` 
+      message: `Saved ${dashboardName}/${pageName} (.svelte + .sql)` 
     };
     
   } catch (error) {
@@ -49,6 +50,7 @@ export async function loadDashboard(dashboardName, pageName) {
     return { 
       success: true, 
       source: data.source,
+      sql: data.sql || '', // Default to empty string for backward compatibility
       compiled: data.compiled,
       lastModified: data.lastModified
     };

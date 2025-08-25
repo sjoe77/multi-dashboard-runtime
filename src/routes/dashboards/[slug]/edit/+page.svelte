@@ -1,11 +1,12 @@
 <script>
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
-  import Monaco from '../../../../components/Monaco.svelte';
+  import TabbedDashboardEditor from '../../../../components/TabbedDashboardEditor.svelte';
   import LivePreview from '../../../../components/LivePreview.svelte';
   import { saveDashboard, loadDashboard, listDashboards } from '../../../../lib/dashboardAPI.js';
   
-  let code = '';
+  let svelteCode = '';
+  let sqlCode = '';
   let currentDashboard = 'sales';
   let currentPage = 'Overview';
   let saveMessage = '';
@@ -20,25 +21,63 @@
     }
   }
   
-  // Load dashboard content from file system
+  // Load dashboard content from file system and localStorage
   async function loadCurrentDashboard() {
     try {
-      // Fetch directly from public/dashboards served by Vite
-      const response = await fetch(`/dashboards/${currentDashboard}/${currentPage}.svelte?t=${Date.now()}`);
-      if (response.ok) {
-        const content = await response.text();
+      // First try to load from localStorage (saved dashboards)
+      const result = await loadDashboard(currentDashboard, currentPage);
+      if (result.success) {
+        svelteCode = result.source;
+        sqlCode = result.sql || '';
+        return;
+      }
+      
+      // If not in localStorage, fetch from public/dashboards served by Vite
+      const svelteResponse = await fetch(`/dashboards/${currentDashboard}/${currentPage}.svelte?t=${Date.now()}`);
+      if (svelteResponse.ok) {
+        const content = await svelteResponse.text();
         // Check if we got HTML instead of Svelte (common dev server issue)
         if (content.includes('<!doctype') || content.includes('<html')) {
-          code = '<div>Error: Got HTML instead of Svelte file. Check file path.</div>';
+          svelteCode = '<div>Error: Got HTML instead of Svelte file. Check file path.</div>';
         } else {
-          code = content;
+          svelteCode = content;
         }
       } else {
-        code = '<div>Dashboard file not found</div>';
+        svelteCode = '<div>Dashboard file not found</div>';
       }
+      
+      // Try to load companion SQL file
+      try {
+        const sqlUrl = `/dashboards/${currentDashboard}/${currentPage}.sql?t=${Date.now()}`;
+        console.log(`Fetching SQL from: ${sqlUrl}`);
+        const sqlResponse = await fetch(sqlUrl);
+        console.log(`SQL Response status: ${sqlResponse.status}`);
+        
+        if (sqlResponse.ok) {
+          sqlCode = await sqlResponse.text();
+          console.log(`✅ Successfully loaded SQL content: ${sqlCode.length} chars`);
+        } else {
+          console.log(`SQL file not found, creating default template`);
+          // Create default SQL template
+          sqlCode = `-- SQL queries for ${currentDashboard}/${currentPage}
+
+-- Example query (rename as needed)
+-- exampleData
+SELECT 'Example' as name, 100 as value
+UNION ALL
+SELECT 'Sample' as name, 200 as value;`;
+        }
+      } catch (sqlError) {
+        console.error('Error loading SQL file:', sqlError);
+        sqlCode = `-- SQL queries for ${currentDashboard}/${currentPage}
+
+-- Add your named SQL queries here`;
+      }
+      
     } catch (error) {
       console.error('Error loading dashboard:', error);
-      code = '<div>Error loading dashboard</div>';
+      svelteCode = '<div>Error loading dashboard</div>';
+      sqlCode = '-- Error loading SQL file';
     }
   }
 
@@ -64,7 +103,7 @@
   }
   
   async function handleSave() {
-    const result = await saveDashboard(currentDashboard, currentPage, code);
+    const result = await saveDashboard(currentDashboard, currentPage, svelteCode, sqlCode);
     if (result.success) {
       saveMessage = `✅ ${result.message}`;
       if (result.warnings.length > 0) {
@@ -81,10 +120,11 @@
   async function handleLoad(dashboard, page) {
     const result = await loadDashboard(dashboard, page);
     if (result.success) {
-      code = result.source;
+      svelteCode = result.source;
+      sqlCode = result.sql || '';
       currentDashboard = dashboard;
       currentPage = page;
-      saveMessage = `📁 Loaded ${dashboard}/${page}`;
+      saveMessage = `📁 Loaded ${dashboard}/${page} (.svelte + .sql)`;
       setTimeout(() => saveMessage = '', 2000);
       closeDrawer(); // Close drawer after selection
       
@@ -151,10 +191,19 @@
   <!-- Content area -->
   <div class="content">
     <div class="editor">
-      <Monaco bind:value={code} language="svelte" />
+      <TabbedDashboardEditor 
+        bind:svelteCode={svelteCode}
+        bind:sqlCode={sqlCode}
+        {currentDashboard}
+        {currentPage}
+        on:change={(e) => {
+          // Handle editor changes if needed
+          console.log(`${e.detail.type} code changed`);
+        }}
+      />
     </div>
     <div class="preview">
-      <LivePreview {code} />
+      <LivePreview code={svelteCode} />
     </div>
   </div>
 </div>

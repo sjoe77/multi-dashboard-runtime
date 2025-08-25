@@ -3,6 +3,7 @@ import './app.css'
 import 'beercss/dist/cdn/beer.min.css'
 import 'beercss/dist/cdn/beer.min.js'
 import 'material-dynamic-colors/dist/cdn/material-dynamic-colors.min.js'
+// import './components/MonacoCustomElement.js' // Disabled - using MonacoFixed instead
 import App from './App.svelte'
 
 const app = mount(App, {

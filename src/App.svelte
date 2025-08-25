@@ -1,13 +1,14 @@
 <script>
   import { onMount } from 'svelte';
   import SimpleEditor from './components/SimpleEditor.svelte';
-  import Monaco from './components/Monaco.svelte';
+  import TabbedDashboardEditor from './components/TabbedDashboardEditor.svelte';
   import LivePreview from './components/LivePreview.svelte';
   import AppHeader from './components/AppHeader.svelte';
   import AppDrawer from './components/AppDrawer.svelte';
   import { saveDashboard, loadDashboard, listDashboards } from './lib/dashboardAPI.js';
   
-  let code = '';
+  let svelteCode = '';
+  let sqlCode = '';
   let currentDashboard = null;
   let currentPage = 'Overview';
   let saveMessage = '';
@@ -65,20 +66,48 @@
         console.log(`Content preview: ${content.substring(0, 100)}...`);
         
         if (content.includes('<!doctype') || content.includes('<html')) {
-          code = '<div>Error: Got HTML instead of Svelte file. Check file path.</div>';
+          svelteCode = '<div>Error: Got HTML instead of Svelte file. Check file path.</div>';
           console.error('Got HTML instead of Svelte content');
         } else {
-          code = content;
+          svelteCode = content;
           console.log('✅ Successfully loaded dashboard content');
         }
       } else {
         const errorText = await response.text();
         console.error(`Failed to load dashboard: ${response.status} - ${errorText}`);
-        code = `<div>Dashboard file not found (${response.status}): ${currentDashboard}/${currentPage}.svelte</div>`;
+        svelteCode = `<div>Dashboard file not found (${response.status}): ${currentDashboard}/${currentPage}.svelte</div>`;
       }
+      
+      // Also load companion SQL file
+      try {
+        const sqlUrl = `/dashboards/${currentDashboard}/${currentPage}.sql?t=${Date.now()}`;
+        console.log(`Fetching SQL from: ${sqlUrl}`);
+        const sqlResponse = await fetch(sqlUrl);
+        console.log(`SQL Response status: ${sqlResponse.status}`);
+        
+        if (sqlResponse.ok) {
+          sqlCode = await sqlResponse.text();
+          console.log(`✅ Successfully loaded SQL content: ${sqlCode.length} chars`);
+        } else {
+          console.log(`SQL file not found, creating default template`);
+          sqlCode = `-- SQL queries for ${currentDashboard}/${currentPage}
+
+-- Add your named SQL queries here
+-- Example:
+-- queryName
+-- SELECT column1, column2 FROM table_name;`;
+        }
+      } catch (sqlError) {
+        console.error('Error loading SQL file:', sqlError);
+        sqlCode = `-- SQL queries for ${currentDashboard}/${currentPage}
+
+-- Add your named SQL queries here`;
+      }
+      
     } catch (error) {
       console.error('Error loading dashboard:', error);
-      code = `<div>Error loading dashboard: ${error.message}</div>`;
+      svelteCode = `<div>Error loading dashboard: ${error.message}</div>`;
+      sqlCode = '-- Error loading SQL file';
     }
   }
 
@@ -130,7 +159,7 @@
   }
   
   async function handleSave() {
-    const result = await saveDashboard(currentDashboard, currentPage, code);
+    const result = await saveDashboard(currentDashboard, currentPage, svelteCode, sqlCode);
     if (result.success) {
       saveMessage = `✅ ${result.message}`;
       if (result.warnings.length > 0) {
@@ -227,7 +256,7 @@
   {:else if currentView === 'consumer'}
     <div class="consumer-view surface">
       <div class="dashboard-container">
-        <LivePreview {code} />
+        <LivePreview code={svelteCode} />
       </div>
     </div>
   
@@ -254,7 +283,12 @@
           </button>
         </div>
         <div class="editor-content">
-          <Monaco bind:value={code} language="svelte" />
+          <TabbedDashboardEditor 
+            bind:svelteCode={svelteCode}
+            bind:sqlCode={sqlCode}
+            currentDashboard={currentDashboard || ''}
+            currentPage={currentPage}
+          />
         </div>
       </div>
       
@@ -267,7 +301,7 @@
           </button>
         </div>
         <div class="preview-content">
-          <LivePreview {code} />
+          <LivePreview code={svelteCode} />
         </div>
       </div>
     </div>
